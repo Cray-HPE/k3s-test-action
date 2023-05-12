@@ -23,9 +23,9 @@
 #
 ---
 name: Common Actions
-description: "Common actions for all repositories"
+description: This action contains steps common to all repositories
 
 runs:
   using: "composite"
   steps:
-    - uses: ./license-check.yml
+    - uses: ./.github/workflows/common.yml
