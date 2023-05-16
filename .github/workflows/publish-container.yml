@@ -36,16 +36,16 @@ on:
         default: artifactory.algol60.net
         type: string
     secrets:
-      artifactory-username:
+      artifactory_username:
         description: Username for Helm repository and Docker registry
         required: true
-      artifactory-password:
+      artifactory_password:
         description: Password for Helm repository and Docker registry
         required: true
-      cosign-gcp-workload-identity-provider:
+      cosign_gcp_workload_identity_provider:
         description: "Google Cloud Workload Identity Provider"
         required: true
-      cosign-gcp-service-account:
+      cosign_gcp_service_account:
         description: "Google Cloud Service Account"
         required: true
 
@@ -67,8 +67,8 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ${{ inputs.registry }}
-          username: ${{ secrets.artifactory-username }}
-          password: ${{ secrets.artifactory-password }}
+          username: ${{ secrets.artifactory_username }}
+          password: ${{ secrets.artifactory_password }}
 
       - name: Install cosign
         uses: sigstore/cosign-installer@main
@@ -78,8 +78,8 @@ jobs:
       - name: Authenticate to GCP with Workload Identity Provider
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: ${{ secrets.cosign-gcp-workload-identity-provider }}
-          service_account: ${{ secrets.cosign-gcp-service-account }}
+          workload_identity_provider: ${{ secrets.cosign_gcp_workload_identity_provider }}
+          service_account: ${{ secrets.cosign_gcp_service_account }}
 
       - name: Set up Cloud SDK for Signing
         uses: google-github-actions/setup-gcloud@v0
@@ -93,17 +93,17 @@ jobs:
           echo "timestamp=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
           echo "gitsha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-      - id: base-images
+      - id: base_images
         run: |
           echo "::group::Evaluate Base Images"
-          base-images=""
+          base_images=""
           for image in $(grep -i -E '^FROM .+:.+' ./Dockerfile | awk '{ print $2 }'); do
               echo "Pulling image $image ..."
               docker pull $image
-              base-images="${base-images} $(docker inspect $image --format '{{ index .RepoDigests 0 }}')"
+              base_images="${base_images} $(docker inspect $image --format '{{ index .RepoDigests 0 }}')"
           done
-          base-images=${base-images# }
-          echo "base-images=${base-images// /,}" >> $GITHUB_OUTPUT
+          base_images=${base_images# }
+          echo "base_images=${base_images// /,}" >> $GITHUB_OUTPUT
           echo "::endgroup::"
         shell: bash
 
@@ -115,7 +115,7 @@ jobs:
           tags: type=raw,value=${{ steps.info.outputs.version }}
           labels: |
             org.opencontainers.image.vendor=Hewlett Packard Enterprise Development LP
-            baseImages=${{ steps.base-images.outputs.base-images }}
+            baseImages=${{ steps.base_images.outputs.base_images }}
             buildDate=${{ steps.info.outputs.now }}
 
 
@@ -128,7 +128,7 @@ jobs:
 
       - name: Sign
         run: |
-            COSIGN_KEY=${{ inputs.cosign_key }} cosign sign -key ${{ inputs.cosign-key }} \
-            -a GIT_HASH=${{ inputs.github-sha }} ${{ inputs.docker-repo }}:${{ inputs.docker-tag }}
-            echo "::notice::Signed and pushed image ${{ inputs.docker-repo }}:${{ inputs.docker-tag }}"
+            COSIGN_KEY=${{ inputs.cosign_key }} cosign sign -key ${{ inputs.cosign_key }} \
+            -a GIT_HASH=${{ steps.info.outputs.gitsha }} ${{ inputs.registry }}/csm-docker/${{ inputs.status }}/${{ steps.info.outputs.name }}:${{ steps.info.outputs.version }}
+            echo "::notice::Signed and pushed image ${{ inputs.docker_repo }}:${{ inputs.docker_tag }}"
         shell: bash
