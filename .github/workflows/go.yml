@@ -45,7 +45,7 @@ jobs:
     if: ${{ needs.changed_source.outputs.changed }}
     uses: ./.github/workflows/go-snyk.yml
     secrets:
-      snyk_token: ${{ secrets.snyk-token }}
+      snyk_token: ${{ secrets.snyk_token }}
 
   test:
     needs: changed_source
