@@ -22,14 +22,17 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 ---
-name: Check for changed code
+name: List Changed Charts
 
 on:
   workflow_call:
     outputs:
-      changed:
-        description: Was source code changed
-        value: ${{ jobs.run.outputs.changed }}
+      charts:
+        description: List of changed charts
+        value: ${{ jobs.run.outputs.charts }}
+      count:
+        description: Number of changed charts
+        value: ${{ jobs.run.outputs.count }}
 
 permissions:
   contents: read
@@ -37,7 +40,7 @@ permissions:
 
 jobs:
   run:
-    name: Check Changes
+    name: Changed Charts
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -47,20 +50,22 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Check if source code changed
-        id: src
-        run: |
-          if ! git diff --name-only --exit-code HEAD HEAD^ -- \
-          ':!.gitignore' ':!README.md' ':!.git' ':!.github' ':!charts'; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-          fi
+      - name: Count Changed Charts
+        id: count
+        run: >
+          echo "count=$(git diff --name-only HEAD HEAD^ charts/ | cut -d/ -f1,2 | uniq | wc -l)" >> $GITHUB_OUTPUT
 
+      - name: List Changed Charts
+        id: list
+        run: >
+           echo "charts=$(git diff --name-only HEAD HEAD^ charts/ | cut -d/ -f1,2 | xargs -I{file} dirname {file} |
+           uniq | jq -cR 'split(" ") | {chart: .}')" >> $GITHUB_OUTPUT
 
-      - name: Output Changes
+      - name: Display changed chart
         run: |
-          echo "Source Code: ${{ steps.src.outputs.changed }}"
+          echo "Charts: ${{ steps.list.outputs.charts }}"
+          echo "Count: ${{ steps.count.outputs.count }}"
 
     outputs:
-      changed: ${{ steps.src.outputs.changed }}
+      charts: ${{ steps.list.outputs.charts }}
+      count: ${{ steps.count.outputs.count }}

@@ -75,7 +75,7 @@ jobs:
           inputs.publish-container == true
         }}
     needs: [gosec, lint, snyk, status, test, vuln]
-    uses: ./.github/workflows/publish-image.yml
+    uses: ./.github/workflows/publish-container.yml
     with:
       status: ${{ needs.status.outputs.status }}
     secrets:

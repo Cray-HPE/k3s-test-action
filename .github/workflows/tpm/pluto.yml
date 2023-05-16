@@ -22,45 +22,31 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 ---
-name: Branch Status
+name: Kubernetes Deprecation Check
+
+permissions:
+  contents: read
 
 on:
   workflow_call:
-    outputs:
-      status:
-        description: Branch Status
-        value: ${{ jobs.run.outputs.status }}
-
+    inputs:
+      charts:
+        description: 'List of Changed Charts'
+        required: true
+        type: string
 jobs:
   run:
+    name: Pluto
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix: ${{ fromJSON(inputs.charts) }}
     steps:
-      - name: Set branch status
-        id: status
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Download Pluto
+        uses: FairwindsOps/pluto/github-action@master
+      - name: Pluto
         run: |
-          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
-            branch=$GITHUB_BASE_REF
-          else
-            branch=$GITHUB_REF
-          fi
-          echo "Branch: $branch (${branch#refs/heads/})"
-          case "${branch#refs/heads/}" in
-            main|release/*)
-              echo "branch=stable" >> $GITHUB_OUTPUT
-              echo "Artifact Status: Stable" >> $GITHUB_STEP_SUMMARY
-              ;;
-            dev)
-              echo "branch=dev" >> $GITHUB_OUTPUT
-              echo "Artifact Status: Dev" >> $GITHUB_STEP_SUMMARY
-              ;;
-            test)
-              echo "branch=test" >> $GITHUB_OUTPUT
-              echo "Artifact Status: Test" >> $GITHUB_STEP_SUMMARY
-              ;;
-            *)
-              echo "branch=unstable" >> $GITHUB_OUTPUT
-              echo "Artifact Status: Unstable" >> $GITHUB_STEP_SUMMARY
-                ;;
-            esac
-    outputs:
-      status: ${{ steps.status.outputs.branch }}
+          set -o pipefail
+          helm template "./charts/${{ matrix.chart }}" | pluto detect -

@@ -1,0 +1,65 @@
+---
+name: Chart Testing
+
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      charts:
+        description: List of Changed Charts
+        required: true
+        type: string
+      artifactory-helm-repo-name:
+        description: Helm repo mnemonic name, as referred in ct.yaml
+        type: string
+        default: csm-algol60
+      artifactory-hostname:
+        description: Docker registry name to pre-auhtenticate to pull chart images
+        type: string
+        default: artifactory.algol60.net
+      helm-version:
+        description: 'Version of Helm to Intall'
+        required: false
+        type: string
+        default: 'v3.11.3'
+    secrets:
+      snyk-token:
+        description: Snyk authorization token
+        required: true
+      github-token:
+        description: Github authorization token (needed for discovering latest Helm)
+        required: true
+      artifactory-username:
+        description: Username for Helm repository and Docker registry
+        required: true
+      artifactory-password:
+        description: Password for Helm repository and Docker registry
+        required: true
+jobs:
+  run:
+    name: Chart Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix: ${{ fromJSON(inputs.charts) }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: ${{ inputs.helm-version }}
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          check-latest: true
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.4.0
+
+      - name: Lint
+        run: ct lint --charts "./charts/${{ matrix.chart }}" --helm-repo-extra-args "${{ inputs.artifactory-helm-repo-name }}=--username ${{ secrets.artifactory-username }} --password ${{ secrets.artifactory-password }}"
