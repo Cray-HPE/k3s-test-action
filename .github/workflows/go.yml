@@ -1,0 +1,108 @@
+#
+# MIT License
+#
+# (C) Copyright 2023 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+#
+---
+name: Container test and build
+
+on:
+  workflow_call:
+    inputs:
+      publish-container:
+        description: "Create and Publish container"
+        default: false
+        type: boolean
+    secrets:
+      snyk-token:
+        description: "Snyk Authentication Token"
+        required: true
+      artifactory-username:
+        description: "Username for Helm and Docker registry"
+        required: true
+      artifactory-password:
+        description: "Password for Helm and Docker registry"
+        required: true
+      cosign_gcp_workload_identity_provider:
+        description: "Google Cloud Workload Identity Provider"
+        required: true
+      cosign_gcp_service_account:
+        description: "Google Cloud Service Account"
+        required: true
+
+
+jobs:
+  changed-source:
+    uses: ./.github/workflows/shared/changed-source.yml
+
+  gosec:
+    needs: changed-source
+    if: ${{ needs.changed-source.outputs.changed }}
+    uses: ./.github/workflows/go/gosec.yml
+
+  lint:
+    needs: changed-source
+    if: ${{ needs.changed-source.outputs.changed }}
+    uses: ./.github/workflows/go/golangci-lint.yml
+
+  snyk:
+    needs: changed-source
+    if: ${{ needs.changed-source.outputs.changed }}
+    uses: ./.github/workflows/go/snyk.yml
+    secrets:
+      snyk-token: ${{ secrets.snky-token }}
+
+  test:
+    needs: changed-source
+    if: ${{ needs.changed-source.outputs.changed }}
+    uses: ./.github/workflows/go/test.yml
+
+  vuln:
+    needs: changed-source
+    if: ${{ needs.changed-source.outputs.changed }}
+    uses: ./.github/workflows/go/vuln.yml
+
+  status:
+    needs: changed-source
+    if: ${{ needs.changed-source.outputs.changed }}
+    uses: ./.github/workflows/shared/branch-status.yml
+
+  publish:
+    if: ${{
+          github.event.pull_request.merged == true &&
+          (
+              github.event.pull_request.base.ref == 'main' ||
+              github.event.pull_request.base.ref == 'dev' ||
+              github.event.pull_request.base.ref == 'test' ||
+              startsWith(github.event.pull_request.base.ref, 'release/')
+          ) &&
+          needs.changed-source.outputs.changed &&
+          inputs.publish-container == true
+        }}
+    needs: [gosec, lint, snyk, status, test, vuln]
+    uses: ./.github/workflows/publish-image.yml
+    with:
+      status: ${{ needs.status.outputs.status }}
+    secrets:
+      artifactory-username: ${{ secrets.artifactory-username }}
+      artifactory-password: ${{ secrets.artifactory-password }}
+      cosign_gcp_workload_identity_provider: ${{ secrets.cosign_gcp_workload_identity_provider }}
+      cosign_gcp_service_account: ${{ secrets.cosign_gcp_service_account }}
