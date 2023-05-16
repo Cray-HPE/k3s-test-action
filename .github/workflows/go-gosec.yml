@@ -5,9 +5,10 @@ on:
   workflow_call:
 
 jobs:
-  tests:
+  run:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    name: Gosec
     env:
       GO111MODULE: on
     steps:

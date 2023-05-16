@@ -34,6 +34,7 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
+    name: Branch Status
     steps:
       - name: Set branch status
         id: status
