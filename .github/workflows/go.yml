@@ -28,39 +28,39 @@ on:
 
 jobs:
   changed-source:
-    uses: ./.github/workflows/shared/changed-source.yml
+    uses: ./.github/workflows/changed-source.yml
 
   gosec:
     needs: changed-source
     if: ${{ needs.changed-source.outputs.changed }}
-    uses: ./.github/workflows/go/gosec.yml
+    uses: ./.github/workflows/go-gosec.yml
 
   lint:
     needs: changed-source
     if: ${{ needs.changed-source.outputs.changed }}
-    uses: ./.github/workflows/go/golangci-lint.yml
+    uses: ./.github/workflows/go-lint.yml
 
   snyk:
     needs: changed-source
     if: ${{ needs.changed-source.outputs.changed }}
-    uses: ./.github/workflows/go/snyk.yml
+    uses: ./.github/workflows/go-snyk.yml
     secrets:
       snyk-token: ${{ secrets.snky-token }}
 
   test:
     needs: changed-source
     if: ${{ needs.changed-source.outputs.changed }}
-    uses: ./.github/workflows/go/test.yml
+    uses: ./.github/workflows/go-test.yml
 
   vuln:
     needs: changed-source
     if: ${{ needs.changed-source.outputs.changed }}
-    uses: ./.github/workflows/go/vuln.yml
+    uses: ./.github/workflows/go-vuln.yml
 
   status:
     needs: changed-source
     if: ${{ needs.changed-source.outputs.changed }}
-    uses: ./.github/workflows/shared/branch-status.yml
+    uses: ./.github/workflows/branch-status.yml
 
   publish:
     if: ${{
