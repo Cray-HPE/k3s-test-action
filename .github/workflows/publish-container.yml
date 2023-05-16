@@ -42,10 +42,10 @@ on:
       artifactory-password:
         description: Password for Helm repository and Docker registry
         required: true
-      cosign_gcp_workload_identity_provider:
+      cosign-gcp-workload-identity-provider:
         description: "Google Cloud Workload Identity Provider"
         required: true
-      cosign_gcp_service_account:
+      cosign-gcp-service-account:
         description: "Google Cloud Service Account"
         required: true
 
@@ -72,22 +72,17 @@ jobs:
 
       - name: Install cosign
         uses: sigstore/cosign-installer@main
-        if: ${{ inputs.docker_push == 'true' }}
         with:
           cosign-release: 'v1.0.0'
 
       - name: Authenticate to GCP with Workload Identity Provider
         uses: google-github-actions/auth@v0
-        if: ${{ inputs.docker_push  == 'true'
-            && inputs.cosign_gcp_workload_identity_provider
-            && inputs.cosign_gcp_service_account }}
         with:
-          workload_identity_provider: ${{ secrets.cosign_gcp_workload_identity_provider }}
-          service_account: ${{ secrets.cosign_gcp_service_account }}
+          workload_identity_provider: ${{ secrets.cosign-gcp-workload-identity-provider }}
+          service_account: ${{ secrets.cosign-gcp-service-account }}
 
       - name: Set up Cloud SDK for Signing
         uses: google-github-actions/setup-gcloud@v0
-        if: ${{ inputs.docker_push == 'true' }}
 
       - name: Get Project info
         id: info
@@ -101,14 +96,14 @@ jobs:
       - id: base-images
         run: |
           echo "::group::Evaluate Base Images"
-          base_images=""
-          for image in $(grep -i -E '^FROM .+:.+' ./${{ inputs.context_path }}/Dockerfile | awk '{ print $2 }'); do
+          base-images=""
+          for image in $(grep -i -E '^FROM .+:.+' ./Dockerfile | awk '{ print $2 }'); do
               echo "Pulling image $image ..."
               docker pull $image
-              base_images="${base_images} $(docker inspect $image --format '{{ index .RepoDigests 0 }}')"
+              base-images="${base-images} $(docker inspect $image --format '{{ index .RepoDigests 0 }}')"
           done
-          base_images=${base_images# }
-          echo "base_images=${base_images// /,}" >> $GITHUB_OUTPUT
+          base-images=${base-images# }
+          echo "base-images=${base-images// /,}" >> $GITHUB_OUTPUT
           echo "::endgroup::"
         shell: bash
 
@@ -116,24 +111,24 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ inputs.docker_repo }}:${{ inputs.docker_tag }}
+          images: ${{ inputs.registry }}/csm-docker/${{ inputs.status }}/${{ steps.info.outputs.name }}:${{ steps.info.outputs.version }}
           tags: type=raw,value=${{ steps.info.outputs.version }}
           labels: |
             org.opencontainers.image.vendor=Hewlett Packard Enterprise Development LP
-            baseImages=${{ steps.base-images.outputs.base_images }}
+            baseImages=${{ steps.base-images.outputs.base-images }}
             buildDate=${{ steps.info.outputs.now }}
 
 
       - name: Build Image
         uses: docker/build-push-action@v4
         with:
-          push: true
-          tags: ${{ inputs.registry }}/csm-docker/${{ inputs.status }}/${{ steps.info.outputs.name }}:${{ steps.info.outputs.version }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Sign
         run: |
-            COSIGN_KEY=${{ inputs.cosign_key }} cosign sign -key ${{ inputs.cosign_key }} \
-            -a GIT_HASH=${{ inputs.github_sha }} ${{ inputs.docker_repo }}:${{ inputs.docker_tag }}
-            echo "::notice::Signed and pushed image ${{ inputs.docker_repo }}:${{ inputs.docker_tag }}"
+            COSIGN_KEY=${{ inputs.cosign_key }} cosign sign -key ${{ inputs.cosign-key }} \
+            -a GIT_HASH=${{ inputs.github-sha }} ${{ inputs.docker-repo }}:${{ inputs.docker-tag }}
+            echo "::notice::Signed and pushed image ${{ inputs.docker-repo }}:${{ inputs.docker-tag }}"
         shell: bash

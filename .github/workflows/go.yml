@@ -18,10 +18,10 @@ on:
       artifactory-password:
         description: "Password for Helm and Docker registry"
         required: true
-      cosign_gcp_workload_identity_provider:
+      cosign-gcp-workload-identity-provider:
         description: "Google Cloud Workload Identity Provider"
         required: true
-      cosign_gcp_service_account:
+      cosign-gcp-service-account:
         description: "Google Cloud Service Account"
         required: true
 
@@ -45,7 +45,7 @@ jobs:
     if: ${{ needs.changed-source.outputs.changed }}
     uses: ./.github/workflows/go-snyk.yml
     secrets:
-      snyk-token: ${{ secrets.snky-token }}
+      snyk-token: ${{ secrets.snyk-token }}
 
   test:
     needs: changed-source
@@ -81,5 +81,5 @@ jobs:
     secrets:
       artifactory-username: ${{ secrets.artifactory-username }}
       artifactory-password: ${{ secrets.artifactory-password }}
-      cosign_gcp_workload_identity_provider: ${{ secrets.cosign_gcp_workload_identity_provider }}
-      cosign_gcp_service_account: ${{ secrets.cosign_gcp_service_account }}
+      cosign-gcp-workload-identity-provider: ${{ secrets.cosign-gcp-workload-identity-provider }}
+      cosign-gcp-service-account: ${{ secrets.cosign-gcp-service-account }}
