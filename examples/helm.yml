@@ -5,13 +5,20 @@ on: [push, pull_request]
 
 jobs:
   go:
+<<<<<<< Updated upstream
     name: PET Workflow
+=======
+    name: CSM PET Workflow Reusable Helm Workflow
+>>>>>>> Stashed changes
     uses: Cray-HPE/k3s-test-action/.github/workflows/helm.yml@main
     with:
-      publish_container: true
+      unittest: false
     secrets:
       artifactory_password: ${{ secrets.ARTIFACTORY_ALGOL60_TOKEN }}
       artifactory_username: ${{ secrets.ARTIFACTORY_ALGOL60_USERNAME }}
       snyk_token: ${{ secrets.SNYK_TOKEN }}
+<<<<<<< Updated upstream
       github_token: ${{ secrets.GITHUB_TOKEN }}
+=======
+>>>>>>> Stashed changes
       jfrog_token: ${{ secrets.ARTIFACTORY_ALGOL60_JFROG_CLI_CONFIGURATION }}

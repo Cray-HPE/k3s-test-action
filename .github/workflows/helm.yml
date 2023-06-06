@@ -9,9 +9,6 @@ on:
         default: false
         type: boolean
     secrets:
-      github_token:
-        description: "GitHub Token"
-        required: true
       snyk_token:
         description: "Snyk Authentication Token"
         required: true
@@ -67,7 +64,6 @@ jobs:
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
     secrets:
-      github-token: ${{ inputs.github_token }}
       artifactory-username: ${{ inputs.artifactory_username }}
       artifactory-password: ${{ inputs.artifactory_password }}
 
@@ -78,7 +74,6 @@ jobs:
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
     secrets:
-      github-token: ${{ inputs.github_token }}
       artifactory-username: ${{ inputs.artifactory_username }}
       artifactory-password: ${{ inputs.artifactory_password }}
 
