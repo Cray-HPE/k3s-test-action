@@ -32,22 +32,15 @@ jobs:
         run: >
           echo "count=$(git diff --name-only HEAD HEAD^ charts/ | cut -d/ -f1,2 | uniq | wc -l)" >> $GITHUB_OUTPUT
 
-      - name: Test Count
-        run: >
-         git diff --name-only HEAD HEAD^ charts/ | cut -d/ -f1,2 | uniq | wc -l
       - name: Test Changed Charts
         run: |
-           git diff --name-only HEAD HEAD^ charts/
-           git diff --name-only HEAD HEAD^ charts/ | cut -d/ -f1,2
            git diff --name-only HEAD HEAD^ charts/ | cut -d/ -f1,2 | xargs -I{file} dirname {file}
 
       - name: List Changed Charts
         id: list
         run: >
-           git diff --name-only HEAD HEAD^ charts/
-           git diff --name-only HEAD HEAD^ charts/ | cut -d/ -f1,2
-           git diff --name-only HEAD HEAD^ charts/ | cut -d/ -f1,2 | xargs -I{file} dirname {file}
-           echo "charts=$(git diff --name-only HEAD HEAD^ charts/ | cut -d/ -f1,2 | xargs -I{file} dirname {file} |
+           git diff --name-only HEAD HEAD^ charts/ | cut -d/ -f2 | sort -u
+           echo "charts=$(git diff --name-only HEAD HEAD^ charts/ | cut -d/ -f2 | sort -u |
            uniq | jq -cR 'split(" ") | {chart: .}')" >> $GITHUB_OUTPUT
 
       - name: Display changed chart
