@@ -1,0 +1,17 @@
+---
+name: Test and Build (helm)
+
+on: [push, pull_request]
+
+jobs:
+  go:
+    name: PET Workflow
+    uses: Cray-HPE/k3s-test-action/.github/workflows/helm.yml@main
+    with:
+      publish_container: true
+    secrets:
+      artifactory_password: ${{ secrets.ARTIFACTORY_ALGOL60_TOKEN }}
+      artifactory_username: ${{ secrets.ARTIFACTORY_ALGOL60_USERNAME }}
+      snyk_token: ${{ secrets.SNYK_TOKEN }}
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+      jfrog_token: ${{ secrets.ARTIFACTORY_ALGOL60_JFROG_CLI_CONFIGURATION }}

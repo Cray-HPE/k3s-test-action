@@ -1,46 +1,46 @@
-#
-# MIT License
-#
-# (C) Copyright 2023 Hewlett Packard Enterprise Development LP
-#
-# Permission is hereby granted, free of charge, to any person obtaining a
-# copy of this software and associated documentation files (the "Software"),
-# to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense,
-# and/or sell copies of the Software, and to permit persons to whom the
-# Software is furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included
-# in all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-# OTHER DEALINGS IN THE SOFTWARE.
-#
 ---
 name: Helm test and build
 
-on: [push, pull_request]
+on:
+  workflow_call:
+    inputs:
+      unittest:
+        description: "Run helm unittest"
+        default: false
+        type: boolean
+    secrets:
+      github_token:
+        description: "GitHub Token"
+        required: true
+      snyk_token:
+        description: "Snyk Authentication Token"
+        required: true
+      artifactory_username:
+        description: "Username for Helm and Docker registry"
+        required: true
+      artifactory_password:
+        description: "Password for Helm and Docker registry"
+        required: true
+      jfrog_conf:
+        description: "JFrog CLI configuration file"
+        required: true
+
 
 jobs:
   changed-charts:
-    uses: ./.github/workflows/changed-charts.yml
+    uses: ./.github/workflows/helm-changed.yml
 
   pluto:
     needs: changed-charts
     if: ${{ needs.changed-charts.outputs.count > 0 }}
-    uses: ./.github/workflows/pluto.yml
+    uses: ./.github/workflows/helm-pluto.yml
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
 
   polaris:
     needs: changed-charts
     if: ${{ needs.changed-charts.outputs.count > 0 }}
-    uses: ./.github/workflows/polaris.yml
+    uses: ./.github/workflows/helm-polaris.yml
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
       polaris-version: '7.4.1'
@@ -48,14 +48,14 @@ jobs:
   kubeconform:
     needs: changed-charts
     if: ${{ needs.changed-charts.outputs.count > 0 }}
-    uses: ./.github/workflows/kubeconform.yml
+    uses: ./.github/workflows/helm-kubeconform.yml
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
       kubernetes-version: '1.22.17'
 
   helm-unittest:
     needs: changed-charts
-    if: ${{ needs.changed-charts.outputs.count > 0 }}
+    if: ${{ needs.changed-charts.outputs.count > 0 && inputs.unittest == 'true' }}
     uses: ./.github/workflows/helm-unittest.yml
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
@@ -63,38 +63,38 @@ jobs:
   lint:
     needs: changed-charts
     if: ${{ needs.changed-charts.outputs.count > 0 }}
-    uses: ./.github/workflows/chart-testing.yml
+    uses: ./.github/workflows/helm-lint.yml
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
     secrets:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
-      artifactory-username: ${{ secrets.ARTIFACTORY_ALGOL60_READONLY_USERNAME }}
-      artifactory-password: ${{ secrets.ARTIFACTORY_ALGOL60_READONLY_TOKEN }}
+      github-token: ${{ inputs.github_token }}
+      artifactory-username: ${{ inputs.artifactory_username }}
+      artifactory-password: ${{ inputs.artifactory_password }}
 
   validate-helm-images:
     needs: changed-charts
     if: ${{ needs.changed-charts.outputs.count > 0 }}
-    uses: ./.github/workflows/validate-helm-images.yml
+    uses: ./.github/workflows/helm-validate-images.yml
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
     secrets:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
-      artifactory-username: ${{ secrets.ARTIFACTORY_ALGOL60_READONLY_USERNAME }}
-      artifactory-password: ${{ secrets.ARTIFACTORY_ALGOL60_READONLY_TOKEN }}
+      github-token: ${{ inputs.github_token }}
+      artifactory-username: ${{ inputs.artifactory_username }}
+      artifactory-password: ${{ inputs.artifactory_password }}
 
   snyk:
     needs: changed-charts
     if: ${{ needs.changed-charts.outputs.count > 0 }}
-    uses: ./.github/workflows/snyk-helm.yml
+    uses: ./.github/workflows/helm-snyk.yml
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
     secrets:
-      snyk-token: ${{ secrets.SNYK_TOKEN }}
+      snyk-token: ${{ inputs.snyk_token }}
 
   kube-score:
     needs: changed-charts
     if: ${{ needs.changed-charts.outputs.count > 0 }}
-    uses: ./.github/workflows/kube-score.yml
+    uses: ./.github/workflows/helm-kube-score.yml
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
       kube-score-version: 1.16.1
@@ -142,6 +142,6 @@ jobs:
       charts: ${{ needs.changed-charts.outputs.charts }}
       status: ${{ needs.status.outputs.status }}
     secrets:
-      jfrog-conf: ${{ secrets.ARTIFACTORY_ALGOL60_JFROG_CLI_CONFIGURATION }}
-      artifactory-username: ${{ secrets.ARTIFACTORY_ALGOL60_USERNAME }}
-      artifactory-password: ${{ secrets.ARTIFACTORY_ALGOL60_TOKEN }}
+      jfrog-conf: ${{ inputs.jfrog_conf }}
+      artifactory-username: ${{ inputs.artifactory_username }}
+      artifactory-password: ${{ inputs.artifactory_password }}
