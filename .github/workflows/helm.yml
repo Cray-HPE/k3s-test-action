@@ -9,9 +9,6 @@ on:
         default: false
         type: boolean
     secrets:
-      snyk_token:
-        description: "Snyk Authentication Token"
-        required: true
       artifactory_username:
         description: "Username for Helm and Docker registry"
         required: true
@@ -20,6 +17,9 @@ on:
         required: true
       jfrog_conf:
         description: "JFrog CLI configuration file"
+        required: true
+      snyk_token:
+        description: "Snyk Authentication Token"
         required: true
 
 
@@ -40,7 +40,7 @@ jobs:
     uses: ./.github/workflows/helm-polaris.yml
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
-      polaris-version: '7.4.1'
+      polaris_version: '7.4.1'
 
   kubeconform:
     needs: changed-charts
@@ -48,7 +48,7 @@ jobs:
     uses: ./.github/workflows/helm-kubeconform.yml
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
-      kubernetes-version: '1.22.17'
+      kubernetes_version: '1.22.17'
 
   helm-unittest:
     needs: changed-charts
@@ -64,8 +64,8 @@ jobs:
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
     secrets:
-      artifactory-username: ${{ inputs.artifactory_username }}
-      artifactory-password: ${{ inputs.artifactory_password }}
+      artifactory_username: ${{ inputs.artifactory_username }}
+      artifactory_password: ${{ inputs.artifactory_password }}
 
   validate-helm-images:
     needs: changed-charts
@@ -74,8 +74,8 @@ jobs:
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
     secrets:
-      artifactory-username: ${{ inputs.artifactory_username }}
-      artifactory-password: ${{ inputs.artifactory_password }}
+      artifactory_username: ${{ inputs.artifactory_username }}
+      artifactory_password: ${{ inputs.artifactory_password }}
 
   snyk:
     needs: changed-charts
@@ -84,7 +84,7 @@ jobs:
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
     secrets:
-      snyk-token: ${{ inputs.snyk_token }}
+      snyk_token: ${{ inputs.snyk_token }}
 
   kube-score:
     needs: changed-charts
@@ -92,7 +92,7 @@ jobs:
     uses: ./.github/workflows/helm-kube-score.yml
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
-      kube-score-version: 1.16.1
+      kube_score_version: 1.16.1
 
   helm-docs:
     needs: changed-charts
@@ -138,5 +138,5 @@ jobs:
       status: ${{ needs.status.outputs.status }}
     secrets:
       jfrog-conf: ${{ inputs.jfrog_conf }}
-      artifactory-username: ${{ inputs.artifactory_username }}
-      artifactory-password: ${{ inputs.artifactory_password }}
+      artifactory_username: ${{ inputs.artifactory_username }}
+      artifactory_password: ${{ inputs.artifactory_password }}
