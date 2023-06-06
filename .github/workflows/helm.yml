@@ -138,5 +138,3 @@ jobs:
       status: ${{ needs.status.outputs.status }}
     secrets:
       jfrog_conf: ${{ inputs.jfrog_conf }}
-      artifactory_username: ${{ inputs.artifactory_username }}
-      artifactory_password: ${{ inputs.artifactory_password }}
