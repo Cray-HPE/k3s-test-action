@@ -137,6 +137,6 @@ jobs:
       charts: ${{ needs.changed-charts.outputs.charts }}
       status: ${{ needs.status.outputs.status }}
     secrets:
-      jfrog-conf: ${{ inputs.jfrog_conf }}
+      jfrog_conf: ${{ inputs.jfrog_conf }}
       artifactory_username: ${{ inputs.artifactory_username }}
       artifactory_password: ${{ inputs.artifactory_password }}
