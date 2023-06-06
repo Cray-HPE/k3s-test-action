@@ -132,7 +132,7 @@ jobs:
           needs.changed-charts.outputs.count > 0
         }}
 
-    uses: ./.github/workflows/publish-chart.yml
+    uses: ./.github/workflows/helm-publish.yml
     with:
       charts: ${{ needs.changed-charts.outputs.charts }}
       status: ${{ needs.status.outputs.status }}
